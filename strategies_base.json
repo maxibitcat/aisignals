@@ -1,0 +1,41 @@
+{
+  "strategies": [
+    {
+      "symbol": "BTC",
+      "coingeckoId": "bitcoin",
+      "binanceSymbol": "BTCUSDT",
+      "type": "crypto",
+      "chainAsset": "BTC",
+      "model": "gpt-5.2",
+      "version": 0
+    },
+    {
+      "symbol": "KAS",
+      "coingeckoId": "kaspa",
+      "binanceSymbol": "KASUSDT",
+      "type": "crypto",
+      "chainAsset": "KAS",
+      "model": "gpt-5.2",
+      "version": 0
+    },
+    {
+      "symbol": "PAXG",
+      "coingeckoId": "pax-gold",
+      "binanceSymbol": "PAXGUSDT",
+      "type": "metal",
+      "chainAsset": "GOLD",
+      "model": "gpt-5.2",
+      "version": 0
+    },
+    {
+      "symbol": "KAG",
+      "coingeckoId": "kinesis-silver",
+      "binanceSymbol": null,
+      "derivativesProxySymbol": "PAXGUSDT",
+      "type": "metal",
+      "chainAsset": "SILVER",
+      "model": "gpt-5.2",
+      "version": 0
+    }
+  ]
+}

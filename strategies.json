@@ -1,0 +1,22 @@
+{
+  "strategies": [
+    {
+      "symbol": "BTC",
+      "coingeckoId": "bitcoin",
+      "binanceSymbol": "BTCUSDT",
+      "type": "crypto",
+      "chainAsset": "BTC",
+      "model": "gpt-5.2",
+      "version": 0
+    },
+    {
+      "symbol": "KAS",
+      "coingeckoId": "kaspa",
+      "binanceSymbol": "KASUSDT",
+      "type": "crypto",
+      "chainAsset": "KAS",
+      "model": "gpt-5.2",
+      "version": 0
+    }
+  ]
+}
