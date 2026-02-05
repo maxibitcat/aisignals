@@ -63,11 +63,11 @@ function tidyExplanation(text) {
 // -------------------------
 
 const argv = process.argv.slice(2);
-const RUN_NOW = argv.includes("--run-now") || String(process.env.RUN_ON_START || "false").toLowerCase() === "true";
+const RUN_NOW = argv.includes("--run-now") || envBool("RUN_ON_START", false);
 const FORCE_SEND_RUN_NOW =
   argv.includes("--send-run-now") ||
   argv.includes("--force-send") ||
-  String(process.env.SEND_RUN_NOW_TO_CHAIN || "false").toLowerCase() === "true";
+  envBool("SEND_RUN_NOW_TO_CHAIN", false);
 
 // -------------------------
 // Env
@@ -523,16 +523,19 @@ if (chain && nSignalsFeedback > 0) {
     };
 
     let decision;
+    let aiError = null;
     try {
       decision = await getAi(strategy.model).decideSignal(payload);
     } catch (e) {
+      aiError = String(e?.message || e);
+      // Never write raw provider errors on-chain. If the model is unavailable, fall back safely.
       decision = {
         signal: "LONG_CASH",
-        explanation: `AI call failed; defaulting to cash. Error: ${String(e.message || e)}`.slice(0, 600)
+        explanation: "Defaulting to cash (AI unavailable)."
       };
     }
 
-    const record = {
+const record = {
       timestamp,
       symbol,
       strategy: buildStrategyName(strategy, runType),
@@ -542,6 +545,7 @@ if (chain && nSignalsFeedback > 0) {
       run_type: runType,
       signal: decision.signal,
       explanation: tidyExplanation(decision.explanation),
+      ai_error: aiError,
       data_status: {
         macro: macroOk,
         derivatives: derivativesOkBySymbol.get(symbol) ?? false,
@@ -555,7 +559,7 @@ if (chain && nSignalsFeedback > 0) {
     appendNdjson(logPath, record);
     console.log(`[${timestamp}] ${record.strategy}: ${decision.signal} — ${record.explanation}`);
 
-    if (chain) {
+    if (shouldSendToChain && chain) {
       try {
         const strategyName = buildStrategyName(strategy, runType);
         const chainMapped = mapDecisionToChain(decision.signal, strategy.chainAsset);

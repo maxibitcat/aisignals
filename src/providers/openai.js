@@ -27,6 +27,44 @@ function describeAxiosError(err) {
   };
 }
 
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetryAxiosError(err) {
+  const status = err?.response?.status;
+  // Retry on network errors / timeouts (no response), rate limits, and transient server errors.
+  if (!status) return true;
+  if (status === 408 || status === 409 || status === 425 || status === 429) return true;
+  if (status >= 500 && status <= 599) return true;
+  return false;
+}
+
+async function postWithRetry(url, body, axiosConfig, { retries = 3, baseDelayMs = 750 } = {}) {
+  let attempt = 0;
+  let lastErr = null;
+
+  while (attempt <= retries) {
+    try {
+      return await axios.post(url, body, axiosConfig);
+    } catch (err) {
+      lastErr = err;
+      const retryable = shouldRetryAxiosError(err);
+      if (!retryable || attempt === retries) break;
+
+      const jitter = Math.floor(Math.random() * 250);
+      const delay = baseDelayMs * Math.pow(2, attempt) + jitter;
+      console.warn(
+        `[OpenAI] transient error (attempt ${attempt + 1}/${retries + 1}); retrying in ${delay}ms...`
+      );
+      await sleep(delay);
+      attempt += 1;
+    }
+  }
+  throw lastErr;
+}
+
 export class OpenAIProvider {
   constructor({ apiKey, model }) {
     this.apiKey = apiKey;
@@ -80,13 +118,19 @@ export class OpenAIProvider {
 
     let response;
     try {
-      response = await axios.post("https://api.openai.com/v1/responses", body, {
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json"
+      const maxRetries = Math.max(0, Number(process.env.OPENAI_MAX_RETRIES ?? 3));
+      response = await postWithRetry(
+        "https://api.openai.com/v1/responses",
+        body,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json"
+          },
+          timeout: 60_000
         },
-        timeout: 60_000
-      });
+        { retries: maxRetries, baseDelayMs: 750 }
+      );
     } catch (err) {
       const info = describeAxiosError(err);
       console.error("[OpenAI] responses error:", JSON.stringify(info, null, 2));
