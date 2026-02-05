@@ -8,7 +8,7 @@ import { nowIsoWithOffset } from "./lib/time.js";
 
 import { OpenAIProvider } from "./providers/openai.js";
 import { fetchPriceSeries } from "./providers/coingecko.js";
-import { fetchDerivativesSnapshot } from "./providers/binanceFutures.js";
+import { fetchDerivativesSnapshot } from "./providers/krakenFutures.js";
 import { fetchFearGreed } from "./providers/fearGreed.js";
 import { fetchGoogleTrends } from "./providers/googleTrends.js";
 
@@ -393,7 +393,7 @@ async function runOnce({ runType }) {
         bSym = asset.derivativesProxySymbol;
         derivSource = `proxy:${asset.derivativesProxySymbol}`;
       }
-      if (!bSym) throw new Error("Missing binanceSymbol/proxy");
+      if (!bSym) throw new Error("Missing derivatives symbol (binanceSymbol/proxy)");
 
       derivativesRaw = await fetchDerivativesSnapshot({ symbol: bSym });
       derivativesRaw._source = derivSource;
